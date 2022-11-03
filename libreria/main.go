@@ -1,0 +1,5 @@
+package libreria
+
+func main() {
+
+}
