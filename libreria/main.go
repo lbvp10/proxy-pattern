@@ -1,5 +1,0 @@
-package libreria
-
-func main() {
-
-}

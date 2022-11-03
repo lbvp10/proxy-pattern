@@ -22,7 +22,7 @@ type VideoMetric struct {
 	Count int    `json:"count"`
 }
 
-func newVideoProxy() *VideoProxy {
+func NewVideoProxy() *VideoProxy {
 	return &VideoProxy{
 		Video:     &libreria.Video{},
 		idsBanned: []int{3, 4, 7, 8, 9, 10},
