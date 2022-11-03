@@ -1,25 +1,16 @@
-package main
+package proxy
 
 import (
 	"fmt"
 	"github.com/patrickmn/go-cache"
+	cache2 "proxy-pattern/cache"
 	libreria "proxy-pattern/libreria"
-	"sync"
-	"time"
+	"proxy-pattern/metrica"
 )
-
-var cache_ *cache.Cache
-var once sync.Once
-
-const metric_get = "metric_get"
 
 type VideoProxy struct {
 	Video     *libreria.Video `json:"video"`
 	idsBanned []int
-}
-type VideoMetric struct {
-	Id    string `json:"id"`
-	Count int    `json:"count"`
 }
 
 func NewVideoProxy() *VideoProxy {
@@ -31,41 +22,20 @@ func NewVideoProxy() *VideoProxy {
 
 func (videoProxy VideoProxy) GetVideo(id int) *libreria.Video {
 	fmt.Printf("Buscando video don id:%d\n", id)
+	//Validar los banneds aca
 	idString := string(id)
-	if v, found := cache_.Get(idString); found {
+	if v, found := cache2.DoCache().Get(idString); found {
 		videoProxy.Video = v.(*libreria.Video)
 		fmt.Printf("Video encontrado en chache id:%d\n", videoProxy.Video.Id)
 	} else {
 		videoProxy.Video = videoProxy.Video.GetVideo(id)
 		fmt.Printf("Video No encontrado en chache id:%d\n", videoProxy.Video.Id)
-		cache_.Add(idString, videoProxy.Video, cache.DefaultExpiration)
+		cache2.DoCache().Add(idString, videoProxy.Video, cache.DefaultExpiration)
 	}
-	sendMetricGet()
+	metrica.SendMetricGet()
 	return videoProxy.Video
 }
 
 func (videoProxy VideoProxy) PostVideo(video *libreria.Video) *libreria.Video {
 	return video.PostVideo(video)
-}
-
-func InitCache() *cache.Cache {
-	once.Do(func() { //Forzar a que este bloque de codigo se ejecute una unica vez en la app
-		fmt.Println("Inicializando cache.......")
-		cache_ = cache.New(5*time.Minute, 10*time.Minute)
-		fmt.Println("Inicializando cache OK.......")
-	})
-	cache_.Add(metric_get, 0, cache.NoExpiration)
-	return cache_
-}
-func sendMetricGet() {
-	cache_.Increment(metric_get, 1)
-}
-
-func GetMetricGet() *VideoMetric {
-	count, _ := cache_.Get(metric_get)
-	return &VideoMetric{
-		Id:    metric_get,
-		Count: count.(int),
-	}
-
 }
